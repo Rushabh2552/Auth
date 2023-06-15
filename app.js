@@ -160,11 +160,74 @@ app.get(
   }
 );
 
-app.get("/login", (req, res) => {
-  res.render("login");
-});
+app
+  .route("/register")
+  .get((req, res) => res.render("register"))
+  .post((req, res) => {
+    //passport-local-mongoose Method
+    User.register(
+      { username: req.body.username },
+      req.body.password,
+      (err, user) => {
+        if (err) {
+          console.log(err);
+          res.redirect("/register");
+        } else {
+          passport.authenticate("local")(req, res, () => {
+            res.redirect("/secrets");
+          });
+        }
+      }
+    );
+  });
 
-app.get("/register", (req, res) => res.render("register"));
+app
+  .route("/login")
+  .get((req, res) => {
+    res.render("login");
+  })
+  //not a secured way manually
+  .post((req, res) => {
+    const user = new User({
+      username: req.body.username,
+      password: req.body.password,
+    });
+    // passport login method -- req.login()
+    req.login(user, (err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        passport.authenticate("local")(req, res, () => {
+          res.redirect("/secrets");
+        });
+      }
+    });
+  });
+
+app
+  .route("/submit")
+  .get((req, res) => {
+    if (req.isAuthenticated()) {
+      res.render("submit");
+    } else {
+      res.redirect("/login");
+    }
+  })
+  .post((req, res) => {
+    const submittedSecret = req.body.secret;
+
+    User.findById(req.user.id)
+      .then((foundUser) => {
+        if (foundUser) {
+          foundUser.secret = submittedSecret;
+          return foundUser.save();
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    res.redirect("/secrets");
+  });
 
 app.get("/secrets", (req, res) => {
   User.find({ secret: { $ne: null } })
@@ -178,30 +241,6 @@ app.get("/secrets", (req, res) => {
     });
 });
 
-app.get("/submit", (req, res) => {
-  if (req.isAuthenticated()) {
-    res.render("submit");
-  } else {
-    res.redirect("/login");
-  }
-});
-
-app.post("/submit", (req, res) => {
-  const submittedSecret = req.body.secret;
-
-  User.findById(req.user.id)
-    .then((foundUser) => {
-      if (foundUser) {
-        foundUser.secret = submittedSecret;
-        return foundUser.save();
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-  res.redirect("/secrets");
-});
-
 app.get("/logout", (req, res) => {
   req.logout((err) => {
     if (err) {
@@ -209,42 +248,6 @@ app.get("/logout", (req, res) => {
       return res.redirect("/");
     }
     res.redirect("/");
-  });
-});
-
-app.post("/register", (req, res) => {
-  //passport-local-mongoose Method
-  User.register(
-    { username: req.body.username },
-    req.body.password,
-    (err, user) => {
-      if (err) {
-        console.log(err);
-        res.redirect("/register");
-      } else {
-        passport.authenticate("local")(req, res, () => {
-          res.redirect("/secrets");
-        });
-      }
-    }
-  );
-});
-
-//not a secured way manually
-app.post("/login", (req, res) => {
-  const user = new User({
-    username: req.body.username,
-    password: req.body.password,
-  });
-  // passport login method -- req.login()
-  req.login(user, (err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      passport.authenticate("local")(req, res, () => {
-        res.redirect("/secrets");
-      });
-    }
   });
 });
 
