@@ -12,13 +12,12 @@ const findOrCreate = require("mongoose-findorcreate");
 
 const app = express();
 const port = 4000;
-const url = process.env.MONGODB_URI;
+// const url = process.env.MONGODB_URI;  //Mongo Atlas
 
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
 
-//express-session package
 app.use(
   session({
     secret: "Yeah! this is a secret.",
@@ -33,7 +32,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // mongoose.connect(url);
-mongoose.connect("mongodb://127.0.0.1:27017/userDB" && url);
+mongoose.connect("mongodb://127.0.0.1:27017/secrets-appDB");
 
 const userSchema = new mongoose.Schema({
   email: String,
