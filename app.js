@@ -33,7 +33,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // mongoose.connect(url);
-mongoose.connect("mongodb://127.0.0.1:27017/userDB");
+mongoose.connect("mongodb://127.0.0.1:27017/userDB" && url);
 
 const userSchema = new mongoose.Schema({
   email: String,
