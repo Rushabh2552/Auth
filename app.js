@@ -4,19 +4,28 @@ const ejs = require("ejs");
 const mongoose = require("mongoose");
 const passport = require("passport");
 const session = require("express-session");
-const passportLocalMongoose = require("passport-local-mongoose");
+const connectDB = require("./config/dbConn");
+const { logger } = require("./middleware/logger");
+const cors = require("cors");
+const corsOptions = require("./config/corsOptions");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
 const GitHubStrategy = require("passport-github").Strategy;
-const findOrCreate = require("mongoose-findorcreate");
+const { logEvents } = require("./middleware/logger");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
-const port = 4000;
-// const url = process.env.MONGODB_URI;  //Mongo Atlas
+const PORT = process.env.PORT || 4000;
+
+app.use(logger);
+
+app.use(cors(corsOptions));
+
+console.log(process.env.NODE_ENV);
 
 app.use(express.static("public"));
 app.set("view engine", "ejs");
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: false }));
 
 app.use(
   session({
@@ -31,32 +40,15 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// mongoose.connect(url);
-mongoose.connect("mongodb://127.0.0.1:27017/secrets-appDB");
+// Database connection
+connectDB();
 
-const userSchema = new mongoose.Schema({
-  email: String,
-  password: String,
-  googleId: String,
-  facebookId: String,
-  githubId: String,
-  secret: String,
-});
-
-//To hash or salt our password and to users to mongodb
-userSchema.plugin(passportLocalMongoose);
-userSchema.plugin(findOrCreate);
-
-const User = new mongoose.model("User", userSchema);
+//User Schema
+const User = require("./models/User");
 
 //passport cookie
 passport.use(User.createStrategy());
 
-//Local storing
-// passport.serializeUser(User.serializeUser()); //creates cookie
-// passport.deserializeUser(User.deserializeUser()); //using cookie
-
-//hybrid storing
 passport.serializeUser((user, cb) => {
   process.nextTick(() => {
     cb(null, { id: user.id, username: user.username });
@@ -116,9 +108,7 @@ passport.use(
   )
 );
 
-app.get("/", (req, res) => {
-  res.render("home");
-});
+app.use("/", require("./routes/root"));
 
 app.get(
   "/auth/google",
@@ -159,95 +149,28 @@ app.get(
   }
 );
 
-app
-  .route("/register")
-  .get((req, res) => res.render("register"))
-  .post((req, res) => {
-    //passport-local-mongoose Method
-    User.register(
-      { username: req.body.username },
-      req.body.password,
-      (err, user) => {
-        if (err) {
-          console.log(err);
-          res.redirect("/register");
-        } else {
-          passport.authenticate("local")(req, res, () => {
-            res.redirect("/secrets");
-          });
-        }
-      }
-    );
-  });
+app.use("/register", require("./routes/registerRoutes"));
+app.use("/login", require("./routes/authRoutes"));
+app.use("/secrets", require("./routes/secretsRoutes"));
+app.use("/submit", require("./routes/submitRoutes"));
+app.use("/logout", require("./routes/logoutRoutes"));
 
-app
-  .route("/login")
-  .get((req, res) => {
-    res.render("login");
-  })
-  //not a secured way manually
-  .post((req, res) => {
-    const user = new User({
-      username: req.body.username,
-      password: req.body.password,
-    });
-    // passport login method -- req.login()
-    req.login(user, (err) => {
-      if (err) {
-        console.log(err);
-      } else {
-        passport.authenticate("local")(req, res, () => {
-          res.redirect("/secrets");
-        });
-      }
-    });
-  });
-
-app
-  .route("/submit")
-  .get((req, res) => {
-    if (req.isAuthenticated()) {
-      res.render("submit");
-    } else {
-      res.redirect("/login");
-    }
-  })
-  .post((req, res) => {
-    const submittedSecret = req.body.secret;
-
-    User.findById(req.user.id)
-      .then((foundUser) => {
-        if (foundUser) {
-          foundUser.secret = submittedSecret;
-          return foundUser.save();
-        }
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-    res.redirect("/secrets");
-  });
-
-app.get("/secrets", (req, res) => {
-  User.find({ secret: { $ne: null } })
-    .then((foundUsers) => {
-      if (foundUsers) {
-        res.render("secrets", { usersWithSecrets: foundUsers });
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-    });
+app.all("*", (req, res) => {
+  res.status(404);
+  res.render("404");
 });
 
-app.get("/logout", (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      console.error(err);
-      return res.redirect("/");
-    }
-    res.redirect("/");
-  });
+app.use(errorHandler);
+
+mongoose.connection.once("open", () => {
+  console.log("connected to mongoDB");
+  app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));
 });
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+mongoose.connection.on("error", (err) => {
+  console.log(err);
+  logEvents(
+    `${err.no}: ${err.code}\t${err.syscall}\t${err.hostname}`,
+    "mongoErrLog.log"
+  );
+});
