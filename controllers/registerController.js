@@ -5,9 +5,9 @@ const loadRegisterPage = (req, res) => {
   res.render("register");
 };
 
-const userRegister = (req, res) => {
+const userRegister = async (req, res) => {
   //passport-local-mongoose Method
-  User.register(
+  await User.register(
     { username: req.body.username },
     req.body.password,
     (err, user) => {

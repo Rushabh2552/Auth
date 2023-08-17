@@ -1,6 +1,6 @@
-const userLogout = (req, res) => {
+const userLogout = async (req, res) => {
   //passport-local-mongoose Method
-  req.logout((err) => {
+  await req.logout((err) => {
     if (err) {
       console.error(err);
       return res.redirect("/");

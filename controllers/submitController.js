@@ -9,10 +9,10 @@ const loadSubmitPage = (req, res) => {
   }
 };
 
-const submitSecret = (req, res) => {
+const submitSecret = async (req, res) => {
   const submittedSecret = req.body.secret;
 
-  User.findById(req.user.id)
+  await User.findById(req.user.id)
     .then((foundUser) => {
       if (foundUser) {
         foundUser.secret = submittedSecret;
