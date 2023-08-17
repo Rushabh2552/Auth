@@ -1,7 +1,7 @@
 {
-  "name": "authentication",
-  "version": "1.0.0",
-  "description": "",
+  "name": "secrets",
+  "version": "1.1.0",
+  "description": "A express application",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
