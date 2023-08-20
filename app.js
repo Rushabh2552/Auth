@@ -67,7 +67,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:4000/auth/google/secrets",
+      callbackURL: "https://secrets-rushabh.onrender.com/auth/google/secrets",
       userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo",
     },
     (accessToken, refreshToken, profile, cb) => {
@@ -83,7 +83,7 @@ passport.use(
     {
       clientID: process.env.FACEBOOK_APP_ID,
       clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: "http://localhost:4000/auth/facebook/secrets",
+      callbackURL: "https://secrets-rushabh.onrender.com/auth/facebook/secrets",
       profileFields: ["id", "displayName", "email"],
     },
     (accessToken, refreshToken, profile, cb) => {
@@ -99,7 +99,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: "http://localhost:4000/auth/github/secrets",
+      callbackURL: "https://secrets-rushabh.onrender.com/auth/github/secrets",
     },
     (accessToken, refreshToken, profile, cb) => {
       User.findOrCreate({ githubId: profile.id }, (err, user) => {
