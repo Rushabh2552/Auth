@@ -13,6 +13,7 @@ const submitSecret = async (req, res) => {
   const submittedSecret = req.body.secret;
 
   await User.findById(req.user.id)
+    .exec()
     .then((foundUser) => {
       if (foundUser) {
         foundUser.secret = submittedSecret;
