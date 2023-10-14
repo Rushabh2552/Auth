@@ -99,7 +99,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: PROCESS.ENV.GITHUB_CALLBACKURL,
+      callbackURL: process.env.GITHUB_CALLBACKURL,
     },
     (accessToken, refreshToken, profile, cb) => {
       User.findOrCreate({ githubId: profile.id }, (err, user) => {
